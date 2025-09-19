@@ -1,3 +1,22 @@
 {
-    "editor.cursorStyle": "block"
+"terminal.integrated.defaultProfile.linux": "zsh",
+ "terminal.integrated.profiles.linux": {
+    "zsh": {
+        "path": "/usr/bin/flatpak-spawn",
+        "args": ["--host", "--env=TERM=xterm-256color", "zsh"],
+        "overrideName": true,
+    }
+},
+    "files.autoSave": "afterDelay",
+    "workbench.colorTheme": "Default High Contrast",
+    "settingsSync.keybindingsPerPlatform": false,
+    "editor.cursorStyle": "block",
+    "editor.cursorWidth": 3,
+    "editor.lineHeight": 22,
+    "editor.fontFamily": "Fira Code, JetBrains Mono, monospace",
+    "editor.fontLigatures": true,
+    "editor.cursorBlinking": "smooth",
+    "editor.cursorSmoothCaretAnimation": "on",
+    "editor.minimap.enabled": false,
+    "workbench.secondarySideBar.defaultVisibility": "hidden"
 }
