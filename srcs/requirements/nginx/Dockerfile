@@ -1,6 +1,6 @@
+# syntax=docker/dockerfile:1
 FROM    debian:12
 
-# update and upgrade the system
 RUN apt-get update && apt-get upgrade -y
 
 RUN apt-get install -y nginx openssl
