@@ -8,11 +8,9 @@ chmod +x wp-cli.phar
 mv wp-cli.phar /usr/local/bin/wp
 
 # Prepare directory
-cd /var/www/wordpress
-# give permission to wordpress directory
-chmod -R 755 /var/www/wordpress/
-# change owner of wordpress directory to www-data
-chown -R www-data:www-data /var/www/wordpress
+install --directory --mode=775 --owner=www-data --group=www-data /var/www/wordpress
+cd  /var/www/wordpress
+
 #---------------------------------------------------wp installation---------------------------------------------------#
 
 # Download WordPress core files
@@ -38,7 +36,7 @@ wp  user create "$WP_U_NAME" "$WP_U_EMAIL" \
 
 #---------------------------------------------------php config---------------------------------------------------#
 
-# change listen port from unix socket to 9000
+# change listen port from unix socket to 6666
 sed -i '36 s@/run/php/php7.4-fpm.sock@6666@' /etc/php/7.4/fpm/pool.d/www.conf
 # create a directory for php-fpm
 mkdir -p /run/php
