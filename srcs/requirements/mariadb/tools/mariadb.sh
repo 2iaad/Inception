@@ -12,7 +12,9 @@ mariadb -h localhost --execute="
         FLUSH PRIVILEGES\g"
 
 #mariadb restart -> Shutdown mariadb to restart with new config
-mariadb -u root -p$MYSQL_ROOT_PASSWORD --execute="SHUTDOWN;"
+# mariadb -u root -p$MYSQL_ROOT_PASSWORD --execute="SHUTDOWN;"
+service mariadb stop
+# mysqladmin shutdown
 
 # Restart mariadb with new config in the background to keep the container running
 mysqld_safe --port=3306 --bind-address=0.0.0.0 --datadir='/var/lib/mysql'
