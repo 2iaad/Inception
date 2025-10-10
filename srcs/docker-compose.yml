@@ -36,6 +36,7 @@ services:
       timeout: 10s
       retries: 10
       start_period: 10s
+
   wordpress:
     container_name: wordpress
     build:  ./requirements/wordpress
@@ -49,3 +50,16 @@ services:
     networks :
       - inception
     restart: always
+
+  nginx:
+    container_name: nginx
+    build: ./requirements/nginx
+    depends_on:
+      - wordpress
+    volumes:
+      - wordpress:/var/www/wordpress
+    networks:
+      - inception
+    restart: always
+    ports:
+      - "443:443"

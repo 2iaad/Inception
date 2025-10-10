@@ -35,9 +35,8 @@ wp  user create "$WP_U_NAME" "$WP_U_EMAIL" \
                 --allow-root
 
 #---------------------------------------------------php config---------------------------------------------------#
-
-# change listen port from unix socket to 6666
-sed -i '36 s@/run/php/php7.4-fpm.sock@6666@' /etc/php/7.4/fpm/pool.d/www.conf
+# change listen port from unix socket to 9000
+sed -i '36 s@/run/php/php7.4-fpm.sock@9000@' /etc/php/7.4/fpm/pool.d/www.conf
 # create a directory for php-fpm
 mkdir -p /run/php
 # start php-fpm service in the foreground to keep the container running
