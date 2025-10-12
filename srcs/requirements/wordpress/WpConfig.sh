@@ -7,12 +7,12 @@ mv      wp-cli.phar /usr/local/bin/wp
 install --directory --mode=775 --owner=www-data --group=www-data /var/www/wordpress
 cd      /var/www/wordpress
 
-if [ ! -f "/var/www/wordpress/wp-config.php" ]; then
+if [ ! -f "wp-config.php" ]; then
 # Download WordPress core files
     wp core download --allow-root
 
 # Create wp-config.php that specifies how to connect to the DB
-wp  core config --dbhost="mariadb::3306" \
+wp  core config --dbhost="mariadb:3306" \
                 --dbname="$MYSQL_DB" \
                 --dbuser="$MYSQL_USER" \
                 --dbpass="$MYSQL_PASSWORD" \
