@@ -21,8 +21,9 @@ volumes:
 
 services:
   mariadb:
-    container_name: mariadb
     build: ./requirements/mariadb
+    container_name: mariadb
+    image: mariadb
     volumes:
       - mariadb:/var/lib/mysql
     env_file :
@@ -38,8 +39,9 @@ services:
       start_period: 10s
 
   wordpress:
-    container_name: wordpress
     build:  ./requirements/wordpress
+    container_name: wordpress
+    image:  wordpress
     depends_on:
       mariadb:
         condition: service_healthy
@@ -52,8 +54,9 @@ services:
     restart: always
 
   nginx:
+    build:  ./requirements/nginx
     container_name: nginx
-    build: ./requirements/nginx
+    image:  nginx
     depends_on:
       - wordpress
     volumes:
