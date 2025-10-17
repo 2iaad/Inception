@@ -1,6 +1,4 @@
-# syntax=docker/dockerfile:1
-
-FROM debian:12
+FROM debian:bookworm
 
 RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y mariadb-server

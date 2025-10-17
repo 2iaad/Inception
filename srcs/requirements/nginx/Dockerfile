@@ -1,12 +1,11 @@
-# syntax=docker/dockerfile:1
-FROM debian:12
+FROM debian:bookworm
 
 RUN apt-get update && apt-get upgrade -y
 
 RUN apt-get install -y nginx openssl
 
 RUN mkdir -p /etc/nginx/ssl && \
-    openssl req -x509 -noenc \
+    openssl req -x509 -nodes \
     -out /etc/nginx/ssl/inception.crt \
     -keyout /etc/nginx/ssl/inception.key -subj "/C=MA/CN=localhost"
 

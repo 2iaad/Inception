@@ -23,7 +23,7 @@ services:
   mariadb:
     build: ./requirements/mariadb
     container_name: mariadb
-    image: mariadb
+    image: mariadb:42
     volumes:
       - mariadb:/var/lib/mysql
     env_file :
@@ -41,7 +41,7 @@ services:
   wordpress:
     build:  ./requirements/wordpress
     container_name: wordpress
-    image:  wordpress
+    image:  wordpress:42
     depends_on:
       mariadb:
         condition: service_healthy
@@ -56,7 +56,7 @@ services:
   nginx:
     build:  ./requirements/nginx
     container_name: nginx
-    image:  nginx
+    image:  nginx:42
     depends_on:
       - wordpress
     volumes:
