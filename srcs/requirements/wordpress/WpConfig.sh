@@ -8,10 +8,10 @@ install --directory --mode=775 --owner=www-data --group=www-data /var/www/wordpr
 cd      /var/www/wordpress
 
 if [ ! -f "wp-config.php" ]; then
-# Download WordPress core files
+#  installs core files; PHP files and folders that make the WordPress system work.
 wp core download --allow-root
 
-# Create wp-config.php that specifies how to connect to the DB
+# Create wp-config.php that specifies how to connect wordpress to the DB
 wp  core config --dbhost="mariadb:3306" \
                 --dbname="$MYSQL_DB" \
                 --dbuser="$MYSQL_USER" \
@@ -32,7 +32,6 @@ wp  user create "$WP_U_NAME" "$WP_U_EMAIL" \
 fi
 
 # change listen port from unix socket to 9000
-# sed -i '36 s@/run/php/php8.2-fpm.sock@9000@' /etc/php/8.2/fpm/pool.d/www.conf
 sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 0.0.0.0:9000|' /etc/php/8.2/fpm/pool.d/www.conf
 # create a directory for php-fpm
 mkdir -p /run/php
