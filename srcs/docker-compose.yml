@@ -32,10 +32,10 @@ services:
     restart: always
     healthcheck:
       test: ["CMD", "mysqladmin", "ping"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 10s
+      interval: 7s
+      timeout: 7s
+      retries: 5
+      start_period: 7s
 
   wordpress:
     build:  ./requirements/wordpress
