@@ -11,5 +11,4 @@ RUN mkdir -p /etc/nginx/ssl && \
 
 COPY ./nginx.conf /etc/nginx/nginx.conf
 
-# define the command to run when the container starts
 CMD ["nginx", "-g", "daemon off;"]
