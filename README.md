@@ -83,15 +83,13 @@ Inception/
 ## Getting Started
 
 ```bash
-# 1. Clone
 git clone https://github.com/2iaad/Inception.git && cd Inception
 
-# 2. Create srcs/.env (see table below)
+# create srcs/.env
 
-# 3. Point the domain at localhost
+# point the domain at localhost
 echo "127.0.0.1 zderfouf.42.fr" | sudo tee -a /etc/hosts
 
-# 4. Build & run
 make build && make up
 ```
 
@@ -122,7 +120,7 @@ Open **https://zderfouf.42.fr** → accept the self-signed cert → you're in.
 
 ## Security Highlights
 
-🔒 TLS-only — port 80 never opened · 🕸️ Private bridge network — only NGINX publishes · 🗝️ Secrets in `.env` — never baked into layers · 💾 Host-bound volumes — data survives `down` · ⛓️ Healthcheck gating — WordPress waits on MariaDB
+The stack is HTTPS-only (port 80 stays closed), runs on a private bridge network where only NGINX is exposed, keeps secrets in `.env` instead of baking them into image layers, stores data on host-bound volumes so it survives `down`, and starts WordPress only after MariaDB passes its healthcheck.
 
 ---
 
