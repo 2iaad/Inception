@@ -1,164 +1,267 @@
-# Inception_42
+<div align="center">
 
-This is complete guide of inception project  on this page you gonna learn what is docker container  and what used for and why we need it and also learn how to use docker images and also create your own docker image from scratch.
+# Inception
 
-## What are Containers ?
+**System administration from scratch — containerized the right way.**
 
-Containers are an abstraction at the app layer that packages code and dependencies together. Multiple containers can run on the same machine and share the OS kernel with other containers, each running as isolated processes in user space. Containers take up less space than VMs (container images are typically tens of MBs in size), can handle more applications and require fewer VMs and Operating systems.
+A 42 School project that builds a small, secure web infrastructure using **Docker Compose**, **NGINX**, **WordPress + PHP-FPM**, and **MariaDB** — each service isolated in its own hand-built container, wired together over a private network, and reachable only through TLS.
 
-## What are Virtual Machines ?
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![NGINX](https://img.shields.io/badge/NGINX-009639?style=for-the-badge&logo=nginx&logoColor=white)
+![WordPress](https://img.shields.io/badge/WordPress-21759B?style=for-the-badge&logo=wordpress&logoColor=white)
+![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)
+![Debian](https://img.shields.io/badge/Debian_Bookworm-A81D33?style=for-the-badge&logo=debian&logoColor=white)
+![TLS](https://img.shields.io/badge/TLS_1.2%2F1.3-4CAF50?style=for-the-badge&logo=letsencrypt&logoColor=white)
+![42](https://img.shields.io/badge/42_Network-000000?style=for-the-badge&logo=42&logoColor=white)
 
-Virtual machines (VMs) are an abstraction of physical hardware turning one server into many servers. The hypervisor allows multiple VMs to run on a single machine. Each VM includes a full copy of an operating system, the application, necessary binaries and libraries – taking up tens of GBs. VMs also slow to boot.
-
-## Why Docker and What is the problem that is solving ?
-
-- so let’s imagine a scenario pre docker era we have tester and developer and the developer
-
-has just the code and its works perfectly fine on there system but when the tester take the code the test it in his machine its just doesn’t work and the reason could be a lot of thing it it might be the tester need some dependencies need to be installed in order for the code to work properly or some environnement variables needed to be added but they don’t exist it the tester machine. that means we found the problem how can we solve it ?
-
-### Here When Docker Comes Into Place.
-
-but you can be asking your self why not use virtual machine it might be good idea but it has alot of cons so let’s take look on differences between docker and VM’s
+</div>
 
 ---
 
-| Virtual Machine | Docker |
-| --- | --- |
-| Occupy a lot of memory space | Occupy a lot less memory space |
-| long time to boot up | quick boot up because it uses the running kernel that you using |
-| Difficult to scale up | super easy to scale |
-| low efficiency | high efficiency |
-| volumes storage cannot be shared across the VM’s  | volumes storage can be shared across the host and the containers |
+## Table of Contents
 
-![https://www.docker.com/wp-content/uploads/2021/11/container-what-is-container.png.webp](https://www.docker.com/wp-content/uploads/2021/11/container-what-is-container.png.webp)
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+- [Makefile Commands](#makefile-commands)
+- [Environment Variables](#environment-variables)
+- [Services](#services)
+- [Networking & Security](#networking--security)
+- [Troubleshooting](#troubleshooting)
+- [Author](#author)
 
-- **Infrastructure** **:** it’s our computer components like our CPU and Hard Disk and other physical components.
-- **Host Operating System :**  Its the OS that our computer is working on like linux or mac os or even windows
-- **Docker engine :** this is where the magic happens docker engine is the base engine installed in the host machine to build and run containers using docker components and services, it uses
-- **App :** is the container that is running in isolation on the other containers
+---
 
-# Let’s go deeper on how Docker Engine works in details.
+## Overview
 
-![Screen Shot 2022-11-24 at 8.29.31 PM.png](Inception_42/Screen_Shot_2022-11-24_at_8.29.31_PM.png)
+**Inception** teaches you how to architect production-style infrastructure using containerization. The challenge: set up a working WordPress site that lives behind an NGINX reverse proxy with TLS, backed by a MariaDB database — without using any pre-built application images. Every container is built from a **Debian Bookworm** (or Alpine) base image, configured by hand.
 
-The Docker engine is the core component of Docker. It is a lightweight runtime and packaging tool that bundles your application and its dependencies into a single package, called a container. The Docker engine includes the Docker daemon, which is a background process that manages Docker containers, and the Docker client, which is a command-line tool that allows you to interact with the Docker daemon.
+### Core Rules
 
-Here's how the Docker engine works:
+- One service per container.
+- No `latest` tags, no `--link`, no `network: host`, no `network_mode: host`.
+- No infinite loops or hacks like `tail -f` as an entrypoint — services run as **PID 1** in the foreground.
+- Volumes live on the host under `/home/<login>/data/`.
+- The only exposed port is **`443`** (HTTPS with TLS 1.2 / 1.3). Plain HTTP is forbidden.
+- Secrets live in a `.env` file, **never** in the Dockerfiles or the compose file.
 
-1. You write a Dockerfile, which is a text file that contains the instructions for building a Docker image. A Docker image is a lightweight, stand-alone, executable package that includes everything needed to run a piece of software, including the application code, libraries, dependencies, and runtime.
-2. You use the Docker client to build the Docker image by running the **`docker build`** command and specifying the path to the Dockerfile. The Docker daemon reads the instructions in the Dockerfile and builds the image.
-3. Once the image is built, you can use the Docker client to run the image as a container by using the **`docker run`** command. The Docker daemon creates a container from the image and runs the application inside the container.
-4. The Docker engine provides a secure and isolated environment for the application to run in, and it also manages resources such as CPU, memory, and storage for the container.
-5. You can use the Docker client to view, stop, and manage the containers running on your system. You can also use the Docker client to push the Docker image to a registry, such as Docker Hub, so that it can be shared with others.
+---
 
-# Now After we understand what is Docker and how it works now we gonna introduce you to the Dockerfile and Docker-compose file .
+## Architecture
 
-- A Dockerfile is a text file that contains the instructions for building a Docker image. It specifies the base image to use, the dependencies and software to install, and any other configurations or scripts that are needed to set up the environment for the application to run.
+```
+                    ┌───────────────────────────────────────────────┐
+                    │               Host Machine                    │
+                    │                                               │
+   Client ──443──▶  │   ┌─────────┐      ┌─────────────┐           │
+   (HTTPS)          │   │  NGINX  │─────▶│  WordPress  │           │
+                    │   │  (TLS)  │ 9000 │   PHP-FPM   │           │
+                    │   └─────────┘      └──────┬──────┘           │
+                    │                           │ 3306              │
+                    │                           ▼                   │
+                    │                    ┌─────────────┐           │
+                    │                    │   MariaDB   │           │
+                    │                    └─────────────┘           │
+                    │                                               │
+                    │     Network: inception (bridge, isolated)     │
+                    │     Volumes: /home/<login>/data/{wp,db}       │
+                    └───────────────────────────────────────────────┘
+```
 
-- A Docker Compose file is a YAML file that defines how multiple Docker containers should be set up and run. It allows you to define the services that make up your application, and then start and stop all of the containers with a single command.
+Three containers, one private bridge network, two bind-mounted volumes. That's it.
 
-Here are some key differences between a Dockerfile and a Docker Compose file:
+---
 
-1. Purpose: A Dockerfile is used to build a single Docker image, while a Docker Compose file is used to define and run multiple Docker containers as a single application.
-2. Format: A Dockerfile is a plain text file with a specific format and syntax, while a Docker Compose file is written in YAML.
-3. Scope: A Dockerfile is focused on building a single image, while a Docker Compose file is focused on defining and running multiple containers as a single application.
-4. Commands: A Dockerfile uses specific commands, such as **`FROM`**, **`RUN`**, and **`CMD`**, to define the instructions for building the image. A Docker Compose file uses different commands, such as **`services`**, **`volumes`**, and **`networks`**, to define the containers and how they should be set up and run.
+## Project Structure
 
-- Here is a brief explanation of some of the keys mentioned above.
+```
+Inception/
+├── Makefile                        # up / down / build / clean
+├── srcs/
+│   ├── docker-compose.yml          # orchestrates the three services
+│   ├── .env                        # secrets (not committed)
+│   └── requirements/
+│       ├── mariadb/
+│       │   ├── Dockerfile
+│       │   └── tools/mariadb.sh    # DB + user bootstrap
+│       ├── nginx/
+│       │   ├── Dockerfile
+│       │   └── nginx.conf          # TLS + FastCGI to WordPress
+│       └── wordpress/
+│           ├── Dockerfile
+│           └── WpConfig.sh         # wp-cli install + php-fpm
+└── README.md
+```
 
-1. **`FROM`**: This is a command that is used in a Dockerfile to specify the base image to use as the starting point for building the Docker image. The base image provides the foundational layers for the image, and you can then add additional layers on top of it to customize the image for your specific needs.
-2. **`RUN`**: This is a command that is used in a Dockerfile to execute a command in the terminal of the container. It is typically used to install software or libraries that are needed by the application.
-3. **`CMD`**: This is a command that is used in a Dockerfile to specify the default command that should be run when a container is started from the image. It is used to specify the main command that the container should run when it is started.
-4. **`services`**: This is a key in a Docker Compose file that is used to define the services that make up your application. A service is a container that runs a specific application or component of your application.
-5. **`volumes`**: This is a key in a Docker Compose file that is used to define the persistent storage for your application. A volume is a piece of storage that is attached to a container and is used to store data that should persist even when the container is stopped or removed.
-6. **`networks`**: This is a key in a Docker Compose file that is used to define the networks that the containers should be connected to A network is a virtual network that is used to connect containers and allow them to communicate with each other.
+---
 
-## What are the most common commands are used in docker ?
+## Requirements
 
-1. **`docker build`**: Used to build a Docker image from a Dockerfile.
-2. **`docker run`**: Used to run a Docker container based on a Docker image.
-3. **`docker pull`**: Used to pull a Docker image from a registry, such as Docker Hub.
-4. **`docker push`**: Used to push a Docker image to a registry.
-5. **`docker ps`**: Used to list the running Docker containers on a system.
-6. **`docker stop`**: Used to stop a running Docker container.
-7. **`docker rm`**: Used to remove a Docker container.
-8. **`docker rmi`**: Used to remove a Docker image.
-9. **`docker exec`**: Used to execute a command in a running Docker container.
-10. **`docker logs`**: Used to view the logs for a Docker container.
+- **Docker** 20.10+
+- **Docker Compose** v2 (`docker compose`, not `docker-compose`)
+- **make**
+- A Linux host (tested on the 42 campus VMs / Debian) with `sudo` privileges
+- **2+ GB RAM** free and a few GB of disk
 
-## DOCKER COMPOSE
+> **Heads-up:** the compose file binds volumes to `/home/zderfouf/data/...`. If your login differs, update `srcs/docker-compose.yml` and the `Makefile` to point at your own home directory.
 
-Docker Compose is a tool for defining and running multi-container Docker applications. With Compose, you use a YAML file to configure your application's services. Then, using a single command, you can create and start all the services from your configuration.
+---
 
-Using Docker Compose can simplify the process of managing multi-container applications by allowing you to define all of your services in a single place and easily start and stop them. It also makes it easy to scale your application by allowing you to increase or decrease the number of replicas of a service.
+## Getting Started
 
-## What are the most common commands are used in docker-compose ?
-
-- **`up`**: Create and start containers
-- **`down`**: Stop and remove containers, networks, images, and volumes
-- **`start`**: Start existing containers
-- **`stop`**: Stop running containers
-- **`restart`**: Restart running containers
-- **`build`**: Build images
-- **`ps`**: List containers
-- **`logs`**: View output from containers
-- **`exec`**: Run a command in a running container
-- **`pull`**: Pull images from a registry
-- **`push`**: Push images to a registry
-
-## What are DOCKER NETWORKS
-
-In Docker, a network is a virtual software defined network that connects Docker containers. It allows containers to communicate with each other and the outside world, and it provides an additional layer of abstraction over the underlying network infrastructure.
-
-There are several types of networks that you can create in Docker, including:
-
-- Bridge: A bridge network is the default network type when you install Docker. It allows containers to communicate with each other and the host machine, but provides no access to the outside world.
-- Host: A host network uses the host machine's network stack and provides no isolation between the host and the container.
-- Overlay: An overlay network allows containers running on different Docker hosts to communicate with each other.
-- Macvlan: A Macvlan network allows a container to have its own IP address on the same subnet as the host machine.
-
-You can create and manage networks using the **`docker network`** command. For example, to create a new bridge network, you can use the following command:
-
-`docker network create my-network`
-
-- ressources for docker network : [https://www.youtube.com/watch?v=bKFMS5C4CG0](https://www.youtube.com/watch?v=bKFMS5C4CG0)
-
-## What are DOCKER VOLUMES
-
-In Docker, a volume is a persistent storage location that is used to store data from a container. Volumes are used to persist data from a container even after the container is deleted, and they can be shared between containers.
-
-There are two types of volumes in Docker:
-
-- Bind mount: A bind mount is a file or directory on the host machine that is mounted into a container. Any changes made to the bind mount are reflected on the host machine and in any other containers that mount the same file or directory.
-- Named volume: A named volume is a managed volume that is created and managed by Docker. It is stored in a specific location on the host machine, and it is not tied to a specific file or directory on the host. Named volumes are useful for storing data that needs to be shared between containers, as they can be easily attached and detached from containers.
-
-You can create and manage volumes using the **`docker volume`** command. For example, to create a new named volume, you can use the following command:
+### 1. Clone
 
 ```bash
-docker volume create my-volume
+git clone https://github.com/2iaad/Inception.git
+cd Inception
 ```
 
-To mount a volume into a container, you can use the **`-v`** flag when starting the container. For example:
+### 2. Create `srcs/.env`
+
+```env
+# Domain
+DOMAIN_NAME=zderfouf.42.fr
+
+# MariaDB
+MYSQL_DB=wordpress
+MYSQL_USER=wpuser
+MYSQL_PASSWORD=changeme
+MYSQL_ROOT_PASSWORD=supersecret
+
+# WordPress admin
+WP_TITLE=Inception
+WP_ADMIN_N=admin
+WP_ADMIN_P=adminpass
+WP_ADMIN_E=admin@inception.local
+
+# WordPress second user
+WP_U_NAME=editor
+WP_U_EMAIL=editor@inception.local
+WP_U_PASS=editorpass
+WP_U_ROLE=author
+```
+
+### 3. Map the domain locally
 
 ```bash
-docker run -v my-volume:/var/lib/mysql mysql
+echo "127.0.0.1 zderfouf.42.fr" | sudo tee -a /etc/hosts
 ```
 
-This command will start a container running the **`mysql`** image and mount the **`my-volume`** volume at **`/var/lib/mysql`** in the container. Any data written to this location in the container will be persisted in the volume, even if the container is deleted.
+### 4. Build & run
 
-You can also use Docker Compose to create and manage volumes. In a Compose file, you can define a volume and attach it to a service. For example:
-
-```yaml
-version: '3'
-services:
-  db:
-    image: mysql
-    volumes:
-      - db-data:/var/lib/mysql
-volumes:
-  db-data:
-
+```bash
+make build
+make up
 ```
 
-This Compose file defines a **`db-data`** volume and attaches it to the **`db`** service at **`/var/lib/mysql`**. Any data written to this location in the container will be persisted in the volume.
+Open **https://zderfouf.42.fr** in a browser. Accept the self-signed certificate — you're in.
 
+---
+
+## Makefile Commands
+
+| Target       | What it does                                                             |
+| ------------ | ------------------------------------------------------------------------ |
+| `make build` | Creates host volume directories and builds all three images              |
+| `make up`    | Starts the stack in detached mode                                        |
+| `make down`  | Stops the stack, removes volumes and images                              |
+| `make clean` | `docker system prune -af` — wipes **all** unused Docker data on the host |
+
+---
+
+## Environment Variables
+
+| Variable              | Service        | Purpose                          |
+| --------------------- | -------------- | -------------------------------- |
+| `DOMAIN_NAME`         | WordPress      | Site URL used by `wp core install` |
+| `MYSQL_DB`            | MariaDB / WP   | Database name                    |
+| `MYSQL_USER`          | MariaDB / WP   | Non-root DB user                 |
+| `MYSQL_PASSWORD`      | MariaDB / WP   | Password for the DB user         |
+| `MYSQL_ROOT_PASSWORD` | MariaDB        | Root password                    |
+| `WP_TITLE`            | WordPress      | Site title                       |
+| `WP_ADMIN_N/P/E`      | WordPress      | Admin username / password / email |
+| `WP_U_NAME/EMAIL/...` | WordPress      | Second (non-admin) user          |
+
+---
+
+## Services
+
+### NGINX — the only door in
+
+- **Base:** `debian:bookworm`
+- **Port:** `443` (TLS 1.2 / 1.3 only)
+- **Cert:** self-signed, generated at image build time via `openssl`
+- Proxies `*.php` requests to `wordpress:9000` over FastCGI
+
+### WordPress — PHP-FPM, no Apache
+
+- **Base:** `debian:bookworm` + `php8.2-fpm`, `php-mysql`
+- Bootstraps the site with **wp-cli**: downloads core, writes `wp-config.php`, installs, creates the admin and a second user
+- Listens on `0.0.0.0:9000` for FastCGI
+- Idempotent startup — safe to restart
+
+### MariaDB — the store
+
+- **Base:** `debian:bookworm` + `mariadb-server`
+- Creates the database, the app user, and grants privileges on first boot
+- Runs `mysqld_safe` in the foreground as PID 1
+- Healthchecked with `mysqladmin ping` so WordPress waits for it cleanly
+
+---
+
+## Networking & Security
+
+- **Private bridge network** (`inception`) — no container publishes ports except NGINX on `443`.
+- **No HTTP.** Port 80 is never opened. NGINX only listens on `443`.
+- **Self-signed TLS** with SNI on `zderfouf.42.fr`.
+- **Secrets isolation** — credentials are loaded from `.env` at runtime and never baked into layers.
+- **Persistent, host-bound volumes** — WordPress files and the MySQL data directory survive `docker compose down` (use `make down` for a full reset).
+- **Healthcheck gating** — WordPress waits on `condition: service_healthy` for MariaDB, avoiding race conditions on first boot.
+
+---
+
+## Troubleshooting
+
+<details>
+<summary><b>The browser shows a certificate warning</b></summary>
+
+Expected — the cert is self-signed. Click through the warning or import the cert into your trust store.
+</details>
+
+<details>
+<summary><b><code>make build</code> fails on the <code>mkdir</code> step</b></summary>
+
+The Makefile creates `/home/zderfouf/data/...`. If your Unix login isn't `zderfouf`, change the paths in both the `Makefile` and `srcs/docker-compose.yml`.
+</details>
+
+<details>
+<summary><b>WordPress can't reach the database</b></summary>
+
+Check the MariaDB logs: `docker logs mariadb`. The most common cause is a stale data volume from a previous run — wipe it with `make down` and rebuild.
+</details>
+
+<details>
+<summary><b>Port 443 is already in use</b></summary>
+
+Another service (often a local NGINX or Apache) is holding the port. Stop it with `sudo systemctl stop nginx` (or similar) and re-run `make up`.
+</details>
+
+<details>
+<summary><b>Changes to a Dockerfile aren't applied</b></summary>
+
+Docker is caching. Rebuild without cache: `docker compose -f srcs/docker-compose.yml build --no-cache`.
+</details>
+
+---
+
+## Author
+
+[`zderfouf`](https://profile.intra.42.fr/users/zderfouf) at 42 Network
+
+<div align="center">
+
+*Built at 42 · Debian Bookworm · Docker Compose v2*
+
+</div>
