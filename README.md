@@ -1,13 +1,13 @@
 <div align="center">
 
-## Overview
-
-A 42 project that builds a small web infrastructure with **Docker Compose**, **NGINX**, **WordPress + PHP-FPM**, and **MariaDB** — each service in its own hand-built container, wired on a private network, reachable only through **TLS on port 443**.
-
 <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" width="80" />
 <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/nginx/nginx-original.svg" width="80" />
 <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/wordpress/wordpress-plain.svg" width="80" />
 <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" width="80" />
+
+## Overview
+
+A 42 project that builds a small web infrastructure with **Docker Compose**, **NGINX**, **WordPress + PHP-FPM**, and **MariaDB** — each service in its own hand-built container, wired on a private network, reachable only through **TLS on port 443**.
 
 </div>
 
