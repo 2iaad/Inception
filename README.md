@@ -1,29 +1,16 @@
 <div align="center">
 
+## Overview
+
+A 42 project that builds a small web infrastructure with **Docker Compose**, **NGINX**, **WordPress + PHP-FPM**, and **MariaDB** — each service in its own hand-built container, wired on a private network, reachable only through **TLS on port 443**.
+
 <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" width="80" />
 <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/nginx/nginx-original.svg" width="80" />
 <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/wordpress/wordpress-plain.svg" width="80" />
 <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" width="80" />
 
-# Inception
-
-**System administration from scratch — containerized the right way.**
-
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![NGINX](https://img.shields.io/badge/NGINX-009639?style=for-the-badge&logo=nginx&logoColor=white)
-![WordPress](https://img.shields.io/badge/WordPress-21759B?style=for-the-badge&logo=wordpress&logoColor=white)
-![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)
-![42](https://img.shields.io/badge/42-000000?style=for-the-badge&logo=42&logoColor=white)
-
-<img src="https://media.giphy.com/media/jOWB5wW4MGcwk/giphy.gif" width="480" alt="containers" />
-
 </div>
 
----
-
-## Overview
-
-A 42 project that builds a small web infrastructure with **Docker Compose**, **NGINX**, **WordPress + PHP-FPM**, and **MariaDB** — each service in its own hand-built container, wired on a private network, reachable only through **TLS on port 443**.
 
 ## Architecture
 
@@ -84,7 +71,7 @@ Inception/
 ├── Makefile
 └── srcs/
     ├── docker-compose.yml
-    ├── .env                             # ⚠️ create this
+    ├── .env                             # you create this
     └── requirements/
         ├── mariadb/{Dockerfile,tools/mariadb.sh}
         ├── nginx/{Dockerfile,nginx.conf}
@@ -94,8 +81,6 @@ Inception/
 ---
 
 ## Getting Started
-
-<img align="right" src="https://media.giphy.com/media/SWoSkN6DxTszqIKEqv/giphy.gif" width="260" alt="setup" />
 
 ```bash
 # 1. Clone
@@ -143,7 +128,7 @@ Open **https://zderfouf.42.fr** → accept the self-signed cert → you're in.
 
 <div align="center">
 
-**Ziyad Derfoufi** · [`zderfouf`](https://profile.intra.42.fr/users/zderfouf) @ 42 Network
+**Ziyad** · @ 42 Network
 
 <sub>Built at 42 · Debian Bookworm · Docker Compose v2</sub>
 
