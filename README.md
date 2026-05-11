@@ -7,127 +7,216 @@
 
 ## Overview
 
-A 42 project that builds a small web infrastructure with **Docker Compose**, **NGINX**, **WordPress + PHP-FPM**, and **MariaDB** — each service in its own hand-built container, wired on a private network, reachable only through **TLS on port 443**.
+Small web infrastructure with **Docker Compose**, **NGINX**, **WordPress + PHP-FPM**, and **MariaDB**, hand-built from `debian:bookworm`, wired on a private bridge network reachable only through **TLS on port 443**(Port 80 is CLOSED, HTTP does not exist here :P). No pre-built images, no `latest` tags.
 
 </div>
 
+---
 
 ## Architecture
 
-```mermaid
-flowchart TB
-    subgraph Internet[" 🌐 Internet "]
-        Client["Client Browser<br/>HTTPS"]
-    end
-
-    subgraph Host["🖥️  Host Machine — /home/&lt;login&gt;/data"]
-        direction TB
-
-        subgraph Net["🔒  Docker Network: inception (bridge)"]
-            direction TB
-
-            NGINX["🟩 <b>NGINX</b><br/>debian:bookworm<br/>TLS 1.2 / 1.3<br/>:443"]
-            WP["🟦 <b>WordPress</b><br/>debian:bookworm<br/>PHP-FPM<br/>:9000"]
-            DB["🟧 <b>MariaDB</b><br/>debian:bookworm<br/>mysqld_safe<br/>:3306"]
-
-            NGINX -- "FastCGI" --> WP
-            WP -- "SQL" --> DB
-        end
-
-        VolWP[("📦 volume: wordpress<br/>/var/www/wordpress")]
-        VolDB[("📦 volume: mariadb<br/>/var/lib/mysql")]
-
-        WP -. bind-mount .-> VolWP
-        NGINX -. read-only .-> VolWP
-        DB  -. bind-mount .-> VolDB
-    end
-
-    Client == "443 / HTTPS" ==> NGINX
-    Client -.-> |"port 80 ❌ closed"| Host
-
-    classDef nginx fill:#009639,stroke:#004d1c,color:#fff,stroke-width:2px;
-    classDef wp    fill:#21759B,stroke:#0f3c55,color:#fff,stroke-width:2px;
-    classDef db    fill:#C88A2C,stroke:#6e4a14,color:#fff,stroke-width:2px;
-    classDef vol   fill:#f4f1ea,stroke:#888,color:#333;
-    classDef client fill:#fff,stroke:#333,color:#222;
-
-    class NGINX nginx
-    class WP wp
-    class DB db
-    class VolWP,VolDB vol
-    class Client client
 ```
+                        INTERNET
+                           |
+                      port 443 (HTTPS)
+                           |
+                    +--------------+
+                    |    NGINX     |  <- TLS terminator
+                    |  nginx:42   |     self-signed cert
+                    +--------------+
+                           |
+                    FastCGI  (port 9000)
+                           |
+                    +--------------+
+                    |  WordPress   |  <- PHP-FPM process
+                    | wordpress:42 |     wp-cli bootstraps it
+                    +--------------+
+                           |
+                      SQL  (port 3306)
+                           |
+                    +--------------+
+                    |   MariaDB    |  <- mysqld_safe as PID 1
+                    |  mariadb:42  |     DB + user created at startup
+                    +--------------+
 
-## Core Rules
-
-One service per container · no `latest` tags · no `network: host` · services run as **PID 1** in the foreground · only port **443** is exposed (TLS 1.2/1.3) · secrets live in `.env`.
-
----
-
-## Project Structure
-
-```
-Inception/
-├── Makefile
-└── srcs/
-    ├── docker-compose.yml
-    ├── .env                             # you create this
-    └── requirements/
-        ├── mariadb/{Dockerfile,tools/mariadb.sh}
-        ├── nginx/{Dockerfile,nginx.conf}
-        └── wordpress/{Dockerfile,WpConfig.sh}
+        All three on Docker bridge network: "inception"
+        Port 80 is CLOSED — HTTP does not exist here.
 ```
 
 ---
 
-## Getting Started
+## Startup Order
 
-```bash
-git clone https://github.com/2iaad/Inception.git && cd Inception
-
-# create srcs/.env
-
-# point the domain at localhost
-echo "127.0.0.1 zderfouf.42.fr" | sudo tee -a /etc/hosts
-
-make build && make up
+```
+make up
+  |
+  +-- mkdir /root/data/wordpress   (host volume dirs)
+  +-- mkdir /root/data/mariadb
+  |
+  +--> mariadb container starts
+  |       mariadb.sh runs:
+  |         1. start service (setup mode)
+  |         2. create DB + user + grant
+  |         3. stop service
+  |         4. launch mysqld_safe (foreground, PID 1)
+  |       healthcheck: mysqladmin ping every 7s
+  |
+  +--> wordpress container starts  (waits: mariadb healthy)
+  |       wp-config.sh runs:
+  |         1. download wp-cli
+  |         2. if no wp-config.php:
+  |              wp core download
+  |              wp core config  (points to mariadb:3306)
+  |              wp core install (creates admin + editor users)
+  |         3. patch php-fpm to listen on 0.0.0.0:9000
+  |         4. launch php-fpm8.2 -F (foreground, PID 1)
+  |
+  +--> nginx container starts  (waits: wordpress up)
+          Dockerfile baked a self-signed cert at build time
+          nginx.conf: listen 443 ssl, forward *.php -> wordpress:9000
+          CMD: nginx -g "daemon off;" (foreground, PID 1)
 ```
 
-Open **https://zderfouf.42.fr** → accept the self-signed cert → you're in.
+---
+
+## File Map
+
+```
+sysadmin-orbit/
+├── Makefile                        <- build/run/clean commands
+├── srcs/
+│   ├── docker-compose.yml          <- networks, volumes, services
+│   ├── .env                        <- secrets (git-ignored)
+│   ├── .env.example                <- template for .env
+│   └── requirements/
+│       ├── mariadb/
+│       │   ├── Dockerfile          <- installs mariadb-server
+│       │   └── tools/mariadb.sh   <- init DB + run mysqld_safe
+│       ├── nginx/
+│       │   ├── Dockerfile          <- installs nginx + openssl, bakes TLS cert
+│       │   └── nginx.conf          <- server config (443 ssl, fastcgi)
+│       └── wordpress/
+│           ├── Dockerfile          <- installs php-fpm, php-mysql, curl
+│           └── wp-config.sh        <- wp-cli install + run php-fpm
+```
 
 ---
 
-## Makefile & Env
+## Scripts Explained
 
-| Target       | Action                                           |
-| ------------ | ------------------------------------------------ |
-| `make build` | Creates host volumes and builds all three images |
-| `make up`    | Starts the stack in detached mode                |
-| `make down`  | Stops stack, removes volumes and images          |
-| `make clean` | `docker system prune -af`                        |
+### `srcs/requirements/mariadb/tools/mariadb.sh`
+```
+Runs as ENTRYPOINT (PID 1 when container starts).
 
-**`.env` keys:** `DOMAIN_NAME` · `MYSQL_DB/USER/PASSWORD/ROOT_PASSWORD` · `WP_TITLE` · `WP_ADMIN_N/P/E` · `WP_U_NAME/EMAIL/PASS/ROLE`
+Step 1: start MariaDB in background (service mariadb start)
+         — needed so we can run SQL commands against it
+Step 2: sleep 5 — wait for the daemon to be ready
+Step 3: run SQL to:
+         CREATE DATABASE IF NOT EXISTS <MYSQL_DB>
+         CREATE USER <MYSQL_USER>@'%' (allows connections from any host)
+         GRANT ALL PRIVILEGES on that DB to that user
+         FLUSH PRIVILEGES
+Step 4: stop the background MariaDB
+Step 5: relaunch with mysqld_safe --port=3306 --bind-address=0.0.0.0
+         — this is the foreground process Docker watches
+         — bind 0.0.0.0 so WordPress (another container) can connect
+```
+
+### `srcs/requirements/wordpress/wp-config.sh`
+```
+Runs as ENTRYPOINT (PID 1 when container starts).
+
+Step 1: download wp-cli.phar from GitHub, install to /usr/local/bin/wp
+Step 2: create /var/www/wordpress owned by www-data (775)
+Step 3: if wp-config.php doesn't exist yet (fresh volume):
+         wp core download         — pulls WordPress core files
+         wp core config           — writes wp-config.php
+                                    dbhost = mariadb:3306 (Docker DNS)
+                                    dbname/dbuser/dbpass from .env
+         wp core install          — runs WP installer, sets:
+                                    site URL, title, admin user, admin pass
+         wp user create           — adds a second (editor) user
+Step 4: patch /etc/php/8.2/fpm/pool.d/www.conf
+         changes: listen = /run/php/php8.2-fpm.sock
+         to:      listen = 0.0.0.0:9000
+         — required so NGINX (another container) can reach PHP-FPM over TCP
+Step 5: launch php-fpm8.2 -F (foreground)
+```
+
+### `srcs/requirements/nginx/nginx.conf`
+```
+events {}   <- required block, left empty (defaults)
+
+http {
+  server {
+    listen 443 ssl;             <- HTTPS only, port 443
+    ssl_certificate  /etc/nginx/ssl/inception.crt;   <- baked at build time
+    ssl_certificate_key /etc/nginx/ssl/inception.key;
+
+    root  /var/www/wordpress;   <- shared volume with WordPress container
+    index index.php;
+
+    location ~ \.php$ {         <- any .php request gets forwarded
+      fastcgi_pass wordpress:9000;  <- Docker DNS resolves "wordpress"
+    }
+  }
+}
+```
+TLS cert is generated at image build time via `openssl req -x509`.
+Country=MA, CN=localhost. Self-signed, so the browser will warn you.
 
 ---
 
-## Services
+## Volumes & Data Persistence
 
-| Service       | Role                                            |
-| ------------- | ----------------------------------------------- |
-| **NGINX**     | TLS termination on `443`, FastCGI → WordPress   |
-| **WordPress** | PHP-FPM on `:9000`, bootstrapped via **wp-cli** |
-| **MariaDB**   | DB store, `mysqladmin ping` healthcheck         |
+```
+Host path               Docker volume name   Mounted in
+/root/data/mariadb  --> mariadb (bind)    --> mariadb:/var/lib/mysql
+/root/data/wordpress -> wordpress (bind)  --> wordpress:/var/www/wordpress
+                                          --> nginx:/var/www/wordpress (read)
+```
 
-## Security Highlights
-
-The stack is HTTPS-only (port 80 stays closed), runs on a private bridge network where only NGINX is exposed, keeps secrets in `.env` instead of baking them into image layers, stores data on host-bound volumes so it survives `down`, and starts WordPress only after MariaDB passes its healthcheck.
+Both volumes use `driver: local` with `o: bind` — they are plain host directories
+bind-mounted into the containers. Data survives `docker compose down` but is wiped
+by `make fclean` (which does `rm -rf /root/data`).
 
 ---
 
-<div align="center">
+## .env Variables
 
-**Ziyad** · @ 42 Network
+| Variable           | Used by        | Purpose                          |
+|--------------------|----------------|----------------------------------|
+| `MYSQL_DB`         | MariaDB, WP    | Database name                    |
+| `MYSQL_USER`       | MariaDB, WP    | DB user WordPress connects as    |
+| `MYSQL_PASSWORD`   | MariaDB, WP    | Password for that user           |
+| `DOMAIN_NAME`      | WordPress      | Site URL (e.g. https://IP)       |
+| `WP_TITLE`         | WordPress      | Site title                       |
+| `WP_ADMIN_N/P/E`   | WordPress      | Admin username / password / email|
+| `WP_U_NAME/EMAIL/PASS/ROLE` | WordPress | Second (editor) user        |
 
-<sub>Built at 42 · Debian Bookworm · Docker Compose v2</sub>
+`.env` is git-ignored. Copy `.env.example` and fill in real values.
 
-</div>
+---
+
+## Makefile Commands
+
+| Command      | What it does                                                      |
+|--------------|-------------------------------------------------------------------|
+| `make build` | Creates `/root/data/{wordpress,mariadb}`, then `docker compose build` |
+| `make up`    | `build` + `docker compose up -d`                                  |
+| `make down`  | `docker compose down -v --rmi all` (stops, removes volumes+images)|
+| `make clean` | `down` + `docker system prune -af`                                |
+| `make fclean`| `down` + prune + `rm -rf /root/data` (wipes all data)             |
+| `make re`    | `clean` + `build` + `up` (full rebuild from scratch)              |
+
+---
+
+## Key Rules (42 constraints)
+
+- One service per container — no putting two processes in one image.
+- No `latest` tags — all images tagged `:42`.
+- No `network: host` or `--privileged`.
+- Every service runs as PID 1 in the foreground (no `daemon on`).
+- Port 80 is never opened — HTTP does not exist.
+- Secrets live in `.env`, never baked into Dockerfiles.
+- WordPress only starts after MariaDB passes its `mysqladmin ping` healthcheck.

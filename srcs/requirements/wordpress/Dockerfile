@@ -4,8 +4,8 @@ RUN apt-get update && apt-get upgrade -y
 
 RUN apt-get install -y curl php php-fpm php-mysql mariadb-client
 
-COPY ./WpConfig.sh /
+COPY ./wp-config.sh /
 
-RUN  chmod +x WpConfig.sh
+RUN  chmod +x wp-config.sh
 
-ENTRYPOINT ["./WpConfig.sh"]
+ENTRYPOINT ["./wp-config.sh"]
