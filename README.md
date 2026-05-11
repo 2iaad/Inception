@@ -109,6 +109,45 @@ by `make fclean` (which does `rm -rf /root/data`).
 
 ---
 
+Why the `wordpress` volume is shared between two containers
+
+```
+                  HTTPS request for /wp-content/uploads/photo.jpg
+                                       │
+                                       ▼
+                              ┌────────────────┐
+                              │     NGINX      │
+                              │   container    │
+                              └────────┬───────┘
+                                       │
+                            reads file directly from
+                            /var/www/wordpress/wp-content/uploads/photo.jpg
+                                       │
+                                       ▼
+                              ╔═══════════════════════╗
+                              ║  wordpress volume     ║
+                              ║  (= /root/data/       ║
+                              ║       wordpress on    ║
+                              ║       host)           ║
+                              ╚═══════════════════════╝
+                                       ▲
+                            same path, same files
+                                       │
+                              ┌────────┴───────┐
+                              │   WORDPRESS    │
+                              │   container    │
+                              │   (php-fpm)    │
+                              └────────────────┘
+                                       ▲
+                                       │
+            HTTPS request for /index.php → FastCGI to wordpress:9000
+            php-fpm reads the .php file from the same shared volume
+            and executes it
+```
+
+Two containers, one volume, one path on disk. If WP writes a new upload via
+PHP-FPM, NGINX sees it instantly because it's literally the same file.
+
 ## .env Variables
 
 | Variable           | Used by        | Purpose                          |
@@ -125,23 +164,10 @@ by `make fclean` (which does `rm -rf /root/data`).
 
 ---
 
-## Makefile Commands
+## Rules i followed for best practices (1337 constraints)
 
-| Command      | What it does                                                      |
-|--------------|-------------------------------------------------------------------|
-| `make build` | Creates `/root/data/{wordpress,mariadb}`, then `docker compose build` |
-| `make up`    | `build` + `docker compose up -d`                                  |
-| `make down`  | `docker compose down -v --rmi all` (stops, removes volumes+images)|
-| `make clean` | `down` + `docker system prune -af`                                |
-| `make fclean`| `down` + prune + `rm -rf /root/data` (wipes all data)             |
-| `make re`    | `clean` + `build` + `up` (full rebuild from scratch)              |
-
----
-
-## Key Rules (42 constraints)
-
-- One service per container — no putting two processes in one image.
-- No `latest` tags — all images tagged `:42`.
+- One service per container, no putting two processes in one image.
+- No `latest` tags.
 - No `network: host` or `--privileged`.
 - Every service runs as PID 1 in the foreground (no `daemon on`).
 - Port 80 is never opened — HTTP does not exist.
