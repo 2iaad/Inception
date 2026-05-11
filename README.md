@@ -9,39 +9,14 @@
 
 Small web infrastructure with **Docker Compose**, **NGINX**, **WordPress + PHP-FPM**, and **MariaDB**, hand-built from `debian:bookworm`, wired on a private bridge network reachable only through **TLS on port 443**(Port 80 is CLOSED, HTTP does not exist here :P). No pre-built images, no `latest` tags.
 
-</div>
 
 ---
 
 ## Architecture
 
-```
-                        INTERNET
-                           |
-                      port 443 (HTTPS)
-                           |
-                    +--------------+
-                    |    NGINX     |  <- TLS terminator
-                    |  nginx:42   |     self-signed cert
-                    +--------------+
-                           |
-                    FastCGI  (port 9000)
-                           |
-                    +--------------+
-                    |  WordPress   |  <- PHP-FPM process
-                    | wordpress:42 |     wp-cli bootstraps it
-                    +--------------+
-                           |
-                      SQL  (port 3306)
-                           |
-                    +--------------+
-                    |   MariaDB    |  <- mysqld_safe as PID 1
-                    |  mariadb:42  |     DB + user created at startup
-                    +--------------+
+<img src="./diagram.png" width="800" />
 
-        All three on Docker bridge network: "inception"
-        Port 80 is CLOSED — HTTP does not exist here.
-```
+</div>
 
 ---
 
