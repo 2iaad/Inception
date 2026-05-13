@@ -1,23 +1,29 @@
-COMPOSE = docker compose -f srcs/docker-compose.yml
-# host side directories to inject into the container
+COMPOSE  = docker compose -f srcs/docker-compose.yml
 DATA_DIR = /root/data
 
-up: build
-	$(COMPOSE) up -d
+.PHONY: build up down clean fclean re
 
-down:
-	$(COMPOSE) down -v --rmi all
-
+# build without running
 build:
 	mkdir -p $(DATA_DIR)/wordpress
 	mkdir -p $(DATA_DIR)/mariadb
 	$(COMPOSE) build
 
-clean: down
-	docker system prune -af
+# does the building if no containers found
+up:
+	mkdir -p $(DATA_DIR)/wordpress
+	mkdir -p $(DATA_DIR)/mariadb
+	$(COMPOSE) up -d
 
-fclean: down
-	docker system prune -af --volumes
-	rm -rf $(DATA_DIR)
+down:
+	$(COMPOSE) stop
 
-re: clean build up
+# remove containers that been runnign in this compose but are no longer defined in the compose file
+clean:
+	$(COMPOSE) down --remove-orphans
+
+fclean:
+	$(COMPOSE) down -v --rmi all --remove-orphans
+	docker network prune -f
+
+re: fclean up
