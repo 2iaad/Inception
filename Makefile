@@ -3,7 +3,7 @@ DATA_DIR = /root/data
 
 .PHONY: build up down clean fclean re
 
-# build without running
+# do build without running
 build:
 	mkdir -p $(DATA_DIR)/wordpress
 	mkdir -p $(DATA_DIR)/mariadb
@@ -18,10 +18,11 @@ up:
 down:
 	$(COMPOSE) stop
 
-# remove containers that been runnign in this compose but are no longer defined in the compose file
+# remove networks created + containers that been runnign in this compose but are no longer defined in the compose file
 clean:
 	$(COMPOSE) down --remove-orphans
 
+# remove volumes + images
 fclean:
 	$(COMPOSE) down -v --rmi all --remove-orphans
 	docker network prune -f
