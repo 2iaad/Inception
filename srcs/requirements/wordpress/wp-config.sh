@@ -23,14 +23,17 @@ wp  core install    --url="$DOMAIN_NAME" \
                     --admin_email="$WP_ADMIN_E" \
                     --allow-root
 
-wp  user create "$WP_U_NAME" "$WP_U_EMAIL" \
-                --user_pass="$WP_U_PASS" \
-                --role="$WP_U_ROLE" \
+wp  user create "$WP_USER_NAME" "$WP_USER_EMAIL" \
+                --user_pass="$WP_USER_PASS" \
+                --role="$WP_USER_ROLE" \
                 --allow-root 
 fi
 
 sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 0.0.0.0:9000|' /etc/php/8.2/fpm/pool.d/www.conf
 
 mkdir -p /run/php
+
+# wp-content is owned by root but php-fpm runs as www-data, it cant write there / we change that :)
+chown -R www-data:www-data /var/www/wordpress/wp-content
 
 /usr/sbin/php-fpm8.2 -F

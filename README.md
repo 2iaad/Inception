@@ -158,7 +158,7 @@ PHP-FPM, NGINX sees it instantly because it's literally the same file.
 | `DOMAIN_NAME`      | WordPress      | Site URL (e.g. https://IP)       |
 | `WP_TITLE`         | WordPress      | Site title                       |
 | `WP_ADMIN_N/P/E`   | WordPress      | Admin username / password / email|
-| `WP_U_NAME/EMAIL/PASS/ROLE` | WordPress | Second (editor) user        |
+| `WP_USER_NAME/EMAIL/PASS/ROLE` | WordPress | Second (editor) user        |
 
 `.env` is git-ignored. Copy `.env.example` and fill in real values.
 
