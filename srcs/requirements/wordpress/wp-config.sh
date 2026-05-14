@@ -29,6 +29,11 @@ wp  user create "$WP_USER_NAME" "$WP_USER_EMAIL" \
                 --allow-root 
 fi
 
+
+# fix url goes back to 209.38.xx.xxx dropletip when visiting a post
+wp config set WP_HOME    "$DOMAIN_NAME" --allow-root
+wp config set WP_SITEURL "$DOMAIN_NAME" --allow-root
+
 sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 0.0.0.0:9000|' /etc/php/8.2/fpm/pool.d/www.conf
 
 mkdir -p /run/php
